@@ -7,6 +7,10 @@ import faiss
 from utils.pdf_reader import extract_text_from_pdf
 from ai.embeddings import embed_text_batch
 
+from core.config import get_openai_api_key
+get_openai_api_key()  # force init
+
+
 UPLOAD_DIR = "data/uploads"
 CHUNKS_DIR = "data/chunks"
 
