@@ -15,15 +15,12 @@ def login_ui():
                 st.error("Both email and password are required.")
                 return
 
-            # This is TEMPORARY login logic
-            # Later replaced with Supabase or Firebase
-            st.session_state.user = {
-                "email": email
-            }
+            # TEMPORARY AUTH — replace with Supabase later
+            st.session_state.user = {"email": email}
 
             st.success("Logged in successfully!")
-            st.experimental_rerun()
+            st.rerun()  # modern Streamlit refresh
 
 def logout_user():
     st.session_state.user = None
-    st.experimental_rerun()
+    st.rerun()  # correct refresh method
