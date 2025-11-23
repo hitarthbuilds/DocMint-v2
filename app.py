@@ -2,27 +2,31 @@ import streamlit as st
 from utils.session import init_session
 from core.auth import login_ui, logout_user
 
-# Page configuration
+# Page config
 st.set_page_config(
     page_title="DocMint",
     page_icon="🍃",
     layout="wide"
 )
 
-# Initialize session state keys
+# Init session state
 init_session()
 
-# AUTH CHECK
-if st.session_state.user is None:
+# Ensure logout flag exists
+if "logout_trigger" not in st.session_state:
+    st.session_state.logout_trigger = False
 
-    # User not logged in → show login UI only
+
+# -------------------------
+# AUTH CHECK
+# -------------------------
+if st.session_state.user is None:
     login_ui()
 
 else:
-    # Sidebar navigation for logged-in users
+    # Sidebar for authenticated users
     with st.sidebar:
         st.title("🍃 DocMint")
-
         st.write(f"Logged in as **{st.session_state.user['email']}**")
 
         st.page_link("pages/1_Dashboard.py", label="📊 Dashboard")
@@ -31,7 +35,14 @@ else:
         st.page_link("pages/4_Profile.py", label="👤 Profile")
         st.page_link("pages/5_Billing.py", label="💳 Billing")
 
-        st.button("Logout", on_click=logout_user)
+        # Safe logout button (NO rerun here)
+        if st.button("Logout"):
+            logout_user()
+
+    # After logout, handle rerun safely
+    if st.session_state.logout_trigger:
+        st.session_state.logout_trigger = False
+        st.rerun()
 
     st.title("Welcome to DocMint")
     st.write("Choose a page from the sidebar to get started.")
