@@ -2,8 +2,8 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 
-# Load .env file automatically
-load_dotenv()
+# ⬅️ Load .env from project root
+load_dotenv(dotenv_path=os.path.join(os.getcwd(), ".env"))
 
 def load_api_key():
     api_key = os.getenv("OPENAI_API_KEY")
