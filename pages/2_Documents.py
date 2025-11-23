@@ -102,3 +102,7 @@ if uploaded_file:
         st.write(f"Chunk metadata saved to: `{meta_path}`")
 
         st.info("You can now go to the **Chat** page and ask questions about this document.")
+import os
+st.write("CWD:", os.getcwd())
+st.write("ENV FILE EXISTS:", os.path.exists("/workspaces/DocMint-v2/.env"))
+st.write("OPENAI_API_KEY:", os.getenv("OPENAI_API_KEY"))

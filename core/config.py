@@ -23,3 +23,7 @@ def load_api_key():
 
 def get_client():
     return OpenAI(api_key=load_api_key())
+
+
+print("DEBUG: Attempting to load .env at:", ENV_PATH)
+print("DEBUG: API KEY AFTER LOAD:", os.getenv("OPENAI_API_KEY"))
