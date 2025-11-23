@@ -1,4 +1,5 @@
 import streamlit as st
+print("🔥 USING NEW AUTH FILE 🔥")
 
 def login_ui():
     st.title("Login to DocMint")
