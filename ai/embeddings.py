@@ -1,16 +1,19 @@
 # ai/embeddings.py
-from core.config import get_openai_client
 
-def embed_text_batch(chunks):
+from sentence_transformers import SentenceTransformer
+
+# Load the free local embedding model ONCE
+model = SentenceTransformer("all-MiniLM-L6-v2")
+
+def embed_text_batch(text_list):
     """
-    Takes a list of text chunks and returns embeddings using OpenAI.
+    Embeds a list of text chunks using a free local model.
+    Returns a list of vector embeddings.
     """
 
-    client = get_openai_client()
+    if not isinstance(text_list, list):
+        text_list = [text_list]
 
-    response = client.embeddings.create(
-        model="text-embedding-3-small",
-        input=chunks
-    )
-
-    return [item.embedding for item in response.data]
+    # SentenceTransformers returns numpy arrays → convert to python lists
+    embeddings = model.encode(text_list)
+    return embeddings.tolist()
