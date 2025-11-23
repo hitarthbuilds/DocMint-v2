@@ -4,38 +4,40 @@ def login_ui():
     st.title("Login to DocMint")
     st.write("Enter your credentials to continue.")
 
-    # temporary flag for rerun
-    if "login_trigger_rerun" not in st.session_state:
-        st.session_state.login_trigger_rerun = False
+    # initialize flags
+    if "user" not in st.session_state:
+        st.session_state.user = None
+    if "login_trigger" not in st.session_state:
+        st.session_state.login_trigger = False
 
-    with st.form("login_form", clear_on_submit=False):
-        email = st.text_input("Email", placeholder="you@example.com")
-        password = st.text_input("Password", type="password", placeholder="••••••••")
-        submitted = st.form_submit_button("Login")
+    # normal inputs (NOT inside a form)
+    email = st.text_input("Email", placeholder="you@example.com", key="login_email")
+    password = st.text_input("Password", type="password", placeholder="••••••••", key="login_password")
 
-        if submitted:
-            if not email or not password:
-                st.error("Both email and password are required.")
-            else:
-                # store login data
-                st.session_state.user = {"email": email}
-                st.session_state.login_trigger_rerun = True
-                st.success("Logged in successfully!")
+    # login button (safe callback)
+    if st.button("Login"):
+        if not email or not password:
+            st.error("Both fields required.")
+        else:
+            st.session_state.user = {"email": email}
+            st.session_state.login_trigger = True
 
-    # rerun OUTSIDE callback
-    if st.session_state.login_trigger_rerun:
-        st.session_state.login_trigger_rerun = False
+    # RERUN (outside any callback)
+    if st.session_state.login_trigger:
+        st.session_state.login_trigger = False
         st.rerun()
 
 
 def logout_user():
-    # same logic for logout
+    # initialize flag
+    if "logout_trigger" not in st.session_state:
+        st.session_state.logout_trigger = False
+
+    # set user to None
     st.session_state.user = None
-    st.session_state.logout_trigger_rerun = True
+    st.session_state.logout_trigger = True
 
-    if "logout_trigger_rerun" not in st.session_state:
-        st.session_state.logout_trigger_rerun = False
-
-    if st.session_state.logout_trigger_rerun:
-        st.session_state.logout_trigger_rerun = False
+    # rerun completely safely
+    if st.session_state.logout_trigger:
+        st.session_state.logout_trigger = False
         st.rerun()
