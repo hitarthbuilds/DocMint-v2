@@ -1,12 +1,15 @@
 import os
 from dotenv import load_dotenv
-from openai import OpenAI
 
-# Load .env file
-load_dotenv()
+# Force-load .env file
+dotenv_path = os.path.join(os.getcwd(), ".env")
+load_dotenv(dotenv_path)
 
-def get_openai_client():
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise ValueError("OPENAI_API_KEY not found in environment.")
-    return OpenAI(api_key=api_key)
+def get_api_key():
+    key = os.getenv("OPENAI_API_KEY")
+    if not key:
+        print("DEBUG: .env path =", dotenv_path)
+        print("DEBUG: ENV CONTENTS =", open(dotenv_path).read())
+        print("DEBUG: os.environ =", dict(os.environ))
+        raise ValueError("OPENAI_API_KEY is missing.")
+    return key
