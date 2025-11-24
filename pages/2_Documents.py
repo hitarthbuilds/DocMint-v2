@@ -1,25 +1,18 @@
+# pages/2_Documents.py
+
 import streamlit as st
 import os
-import json
-import numpy as np
-import faiss
 
 from utils.pdf_reader import extract_text_from_pdf
-from ai.embeddings import embed_text_batch
-
-from core.config import get_openai_api_key
-get_openai_api_key()  # force init
-
+from ai.rag import build_faiss_index_for_chunks
 
 UPLOAD_DIR = "data/uploads"
-CHUNKS_DIR = "data/chunks"
 
-# -----------------------------
-# Ensure directories exist
-# -----------------------------
+
 def ensure_dirs():
     os.makedirs(UPLOAD_DIR, exist_ok=True)
-    os.makedirs(CHUNKS_DIR, exist_ok=True)
+    os.makedirs("data/chunks", exist_ok=True)
+
 
 def save_uploaded_file(uploaded_file):
     file_path = os.path.join(UPLOAD_DIR, uploaded_file.name)
@@ -27,48 +20,22 @@ def save_uploaded_file(uploaded_file):
         f.write(uploaded_file.getbuffer())
     return file_path
 
-# -----------------------------
-# Chunking logic
-# -----------------------------
-def chunk_text(text, chunk_size=800, overlap=150):
+
+def chunk_text(text: str, chunk_size: int = 800, overlap: int = 150):
     chunks = []
     start = 0
-    while start < len(text):
-        end = start + chunk_size
+    length = len(text)
+
+    while start < length:
+        end = min(start + chunk_size, length)
         chunks.append(text[start:end])
         start = end - overlap
+
     return chunks
 
-# -----------------------------
-# Save embeddings + FAISS index
-# -----------------------------
-def build_faiss_index(chunks, filename):
-    embeddings = embed_text_batch(chunks)
 
-    # FAISS index
-    dim = embeddings.shape[1]
-    index = faiss.IndexFlatL2(dim)
-    index.add(embeddings)
-
-    index_path = os.path.join(CHUNKS_DIR, f"{filename}.index")
-    faiss.write_index(index, index_path)
-
-    meta = {
-        "document": filename,
-        "chunks": chunks
-    }
-
-    meta_path = os.path.join(CHUNKS_DIR, f"{filename}_chunks.json")
-    with open(meta_path, "w", encoding="utf-8") as f:
-        json.dump(meta, f, indent=2)
-
-    return index_path, meta_path
-
-# -----------------------------
-# UI
-# -----------------------------
 st.title("📁 Upload & Process PDFs")
-st.write("Upload a PDF to extract text, chunk it, embed it, and build a searchable index.")
+st.write("Upload a PDF, extract text, chunk it, and build a local searchable index. No APIs used.")
 
 ensure_dirs()
 
@@ -81,32 +48,26 @@ if uploaded_file:
 
     st.info(f"Saved to `{file_path}`")
 
-    with st.spinner("Extracting text..."):
+    with st.spinner("Extracting text from PDF..."):
         text = extract_text_from_pdf(file_path)
 
     if not text.strip():
-        st.error("Failed to extract text.")
+        st.error("Failed to extract text from this PDF.")
         st.stop()
 
     st.success("Text extraction complete!")
+    st.text_area("Preview (first 2000 characters)", text[:2000], height=300)
 
-    # Preview
-    st.text_area("Preview (first 2000 chars)", text[:2000], height=300)
-
-    # Process button
     if st.button("⚙️ Process into searchable format"):
-        with st.spinner("Chunking text..."):
+        with st.spinner("Chunking & indexing..."):
             chunks = chunk_text(text)
-
-        with st.spinner("Embedding chunks..."):
-            index_path, meta_path = build_faiss_index(chunks, base_name)
+            index_path, meta_path = build_faiss_index_for_chunks(
+                chunks=chunks,
+                doc_id=base_name,
+                file_name=uploaded_file.name,
+            )
 
         st.success("Processing complete! 🎉")
         st.write(f"Index saved to: `{index_path}`")
-        st.write(f"Chunk metadata saved to: `{meta_path}`")
-
-        st.info("You can now go to the **Chat** page and ask questions about this document.")
-import os
-st.write("CWD:", os.getcwd())
-st.write("ENV FILE EXISTS:", os.path.exists("/workspaces/DocMint-v2/.env"))
-st.write("OPENAI_API_KEY:", os.getenv("OPENAI_API_KEY"))
+        st.write(f"Metadata saved to: `{meta_path}`")
+        st.info("You can now go to the **Chat** page and start asking questions.")
