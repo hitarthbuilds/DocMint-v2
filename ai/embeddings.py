@@ -1,25 +1,50 @@
 # ai/embeddings.py
 
-from sentence_transformers import SentenceTransformer
-import numpy as np
 import os
+from functools import lru_cache
 
-# Directory where we store FAISS index + chunk metadata
+import numpy as np
+from sentence_transformers import SentenceTransformer
+
+# Where FAISS index + metadata live (used by rag.py)
 CHUNKS_DIR = "data/chunks"
 
-# Load a small, fast embedding model (free, local)
-# This one is solid for semantic search.
-_EMBED_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
-_embed_model = SentenceTransformer(_EMBED_MODEL_NAME)
+
+@lru_cache(maxsize=1)
+def get_embed_model():
+    """
+    Load a SMALL, fast, local embedding model exactly once.
+    'paraphrase-MiniLM-L3-v2' is tiny and good enough for RAG.
+    """
+    model_name = "sentence-transformers/paraphrase-MiniLM-L3-v2"
+    return SentenceTransformer(model_name)
 
 
 def embed_text_batch(text_list):
     """
-    Embed a list of strings into dense vectors using a local model.
-    Returns a numpy array of shape (n, d) with dtype float32.
+    Embed a list of text chunks into dense vectors (float32 numpy array).
+
+    Parameters
+    ----------
+    text_list : list[str] | str
+        Single string or list of strings.
+
+    Returns
+    -------
+    np.ndarray
+        Shape (n, d) float32 embeddings.
     """
     if not isinstance(text_list, list):
         text_list = [text_list]
 
-    embeddings = _embed_model.encode(text_list, batch_size=32, show_progress_bar=False)
-    return np.asarray(embeddings, dtype="float32")
+    model = get_embed_model()
+
+    # batch_size kept modest for weak CPUs (Codespaces, etc.)
+    embeddings = model.encode(
+        text_list,
+        batch_size=16,
+        show_progress_bar=False,
+        convert_to_numpy=True,
+    )
+
+    return embeddings.astype("float32")
